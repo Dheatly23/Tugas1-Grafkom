@@ -8,7 +8,7 @@ class WithGl {
 }
 
 class ShaderProgram extends WithGl {
-    static #uniformMap = Object.frozen({
+    static #uniformMap = Object.freeze({
         [0x1406]: (gl, loc) => ((v) => gl.uniform1f(loc, v)),
         [0x8B50]: (gl, loc) => ((v) => gl.uniform2fv(loc, v)),
         [0x8B51]: (gl, loc) => ((v) => gl.uniform3fv(loc, v)),
@@ -28,7 +28,7 @@ class ShaderProgram extends WithGl {
         [0x8B60]: (gl, loc) => ((v) => gl.uniform1i(loc, v)),
     });
 
-    static #attribMap = Object.frozen({
+    static #attribMap = Object.freeze({
         [0x1406]: (gl, loc, v) => gl.vertexAttrib1f(loc, v),
         [0x8B50]: (gl, loc, v) => gl.vertexAttrib2fv(loc, v),
         [0x8B51]: (gl, loc, v) => gl.vertexAttrib3fv(loc, v),
@@ -116,7 +116,7 @@ class ShaderProgram extends WithGl {
     }
 }
 
-class ShaderRegistry {
+class ShaderRegistry extends WithGl {
     #shaders;
 
     constructor(gl) {
@@ -152,7 +152,7 @@ class ShaderRegistry {
         gl.attachShader(program, await vertShader);
         gl.attachShader(program, await fragShader);
         gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS) {
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
             throw new Error(gl.getProgramInfoLog(program));
         }
         return new ShaderProgram(gl, program);
@@ -201,8 +201,8 @@ class WithTransform extends WithGl {
     get transform() {
         return Matrix4.identity()
             .scale(this.#scale.x, this.#scale.y, this.#scale.z)
-            .multiply(this.#rotation.matrix4())
-            .translate(this.#scale.x, this.#scale.y, this.#scale.z);
+            .multiply(this.#rotation.normalize().matrix4())
+            .translate(this.#position.x, this.#position.y, this.#position.z);
     }
 }
 
@@ -210,7 +210,13 @@ class Object3D extends WithTransform {
     constructor(gl) {
         super(gl);
         this.vbo = gl.createBuffer();
-        this.index = gl.createBuffer();
+        this.vertexSize = 12;
+        this.vertexOffset = 0;
+        this.positionOffset = 0;
+        this.indexBuffer = gl.createBuffer();
+        this.indexCount = 0;
+        this.indexOffset = 0;
+        this.drawType = gl.TRIANGLES;
         this.shader = null;
     }
 
@@ -218,28 +224,54 @@ class Object3D extends WithTransform {
     }
 
     draw(cameraMatrix) {
+        const gl = this.gl;
+        this.shader.useProgram();
+        const transform = this.transform.multiply(cameraMatrix);
+        console.log(this.transform);
+        console.log(cameraMatrix);
+        console.log(transform);
+        const size = this.vertexSize;
+        const offset = this.vertexOffset;
+        this.shader.setAttribBuffer(
+            "aVertexPosition",
+            this.vbo,
+            3,
+            gl.FLOAT,
+            false,
+            size,
+            this.positionOffset + offset,
+        );
+        this.shader.uniform.uTranformMatrix = transform.array;
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        gl.drawElements(this.drawType, this.indexCount, gl.UNSIGNED_SHORT, this.indexOffset);
     }
 }
 
 class CameraView extends WithTransform {
-    constructor(gl, fov = Math.PI / 3, aspect = 1.0, near = 0.1, far = 100) {
+    constructor(gl, fov = Math.PI / 3, near = 0.1, far = 100) {
         super(gl);
         this.fov = fov;
-        this.aspectRatio = aspect;
         this.near = near;
         this.far = far;
     }
 
     draw(objects) {
         const gl = this.gl;
-        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clearDepth(1.0);
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        const cameraMatrix = this.transform.multiply(Matrix4.perspective(
+        const cv = gl.canvas;
+        let aspect = 1;
+        if (cv !== null) {
+            aspect = cv.width / cv.height;
+        }
+        const cameraMatrix = this.transform.scale(1, 1, -1).multiply(Matrix4.perspective(
             this.fov,
-            this.aspectRatio,
+            aspect,
             this.near,
             this.far,
         ));

@@ -165,11 +165,11 @@ class Vector3 {
         return this;
     }
 
-    transform(mat) {
+    transform(other) {
         if (!(other instanceof Matrix4)) {
             throw new Error("Cannot cross product with non-matrix");
         }
-        const o = other.array();
+        const o = other.array;
         const x = this.#data[0] * o[0] + this.#data[1] * o[4] + this.#data[2] * o[8] + o[12];
         const y = this.#data[0] * o[1] + this.#data[1] * o[5] + this.#data[2] * o[9] + o[13];
         const z = this.#data[0] * o[2] + this.#data[1] * o[6] + this.#data[2] * o[10] + o[14];
@@ -299,20 +299,20 @@ class Matrix4 {
     }
 
     translate(dx, dy, dz) {
-        dx *= this.#data[3];
-        dy *= this.#data[7];
-        dz *= this.#data[11];
-        this.#data[0] += dx;
-        this.#data[4] += dx;
-        this.#data[8] += dx;
+        const ddx = dx * this.#data[3];
+        const ddy = dy * this.#data[7];
+        const ddz = dz * this.#data[11];
+        this.#data[0] += ddx;
+        this.#data[4] += ddx;
+        this.#data[8] += ddx;
         this.#data[12] += dx;
-        this.#data[1] += dy;
-        this.#data[5] += dy;
-        this.#data[9] += dy;
+        this.#data[1] += ddy;
+        this.#data[5] += ddy;
+        this.#data[9] += ddy;
         this.#data[13] += dy;
-        this.#data[2] += dz;
-        this.#data[6] += dz;
-        this.#data[10] += dz;
+        this.#data[2] += ddz;
+        this.#data[6] += ddz;
+        this.#data[10] += ddz;
         this.#data[14] += dz;
         return this;
     }
