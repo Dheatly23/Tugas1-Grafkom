@@ -269,12 +269,15 @@ class CameraView extends WithTransform {
         if (cv !== null) {
             aspect = cv.width / cv.height;
         }
-        const cameraMatrix = this.transform.scale(1, 1, -1).multiply(Matrix4.perspective(
-            this.fov,
-            aspect,
-            this.near,
-            this.far,
-        ));
+        const cameraMatrix = this.transform
+            .translate(0, 0, -1)
+            .scale(1, 1, -1)
+            .multiply(Matrix4.perspective(
+                this.fov,
+                aspect,
+                this.near,
+                this.far,
+            ));
         objects.forEach(function (obj) {
             obj.draw(new Matrix4(cameraMatrix));
         });
