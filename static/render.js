@@ -227,9 +227,6 @@ class Object3D extends WithTransform {
         const gl = this.gl;
         this.shader.useProgram();
         const transform = this.transform.multiply(cameraMatrix);
-        console.log(this.transform);
-        console.log(cameraMatrix);
-        console.log(transform);
         const size = this.vertexSize;
         const offset = this.vertexOffset;
         this.shader.setAttribBuffer(
@@ -247,12 +244,13 @@ class Object3D extends WithTransform {
     }
 }
 
-class CameraView extends WithTransform {
-    constructor(gl, fov = Math.PI / 3, near = 0.1, far = 100) {
+class CameraViewBase extends WithTransform {
+    constructor(gl) {
         super(gl);
-        this.fov = fov;
-        this.near = near;
-        this.far = far;
+    }
+
+    get perspectiveTransform() {
+        return Matrix4.identity();
     }
 
     draw(objects) {
@@ -264,22 +262,59 @@ class CameraView extends WithTransform {
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        const cv = gl.canvas;
+        const cameraMatrix = this.transform
+            .scale(1, 1, -1)
+            .multiply(this.perspectiveTransform);
+        objects.forEach(function (obj) {
+            obj.draw(new Matrix4(cameraMatrix));
+        });
+    }
+}
+
+class CameraViewPerspective extends CameraViewBase {
+    constructor(gl, fov = Math.PI / 3, near = 0.1, far = 100) {
+        super(gl);
+        this.fov = fov;
+        this.near = near;
+        this.far = far;
+    }
+
+    get perspectiveTransform() {
+        const cv = this.gl.canvas;
         let aspect = 1;
         if (cv !== null) {
             aspect = cv.width / cv.height;
         }
-        const cameraMatrix = this.transform
-            .translate(0, 0, -1)
-            .scale(1, 1, -1)
+        return Matrix4.identity()
+            .translate(0, 0, 1)
             .multiply(Matrix4.perspective(
                 this.fov,
                 aspect,
                 this.near,
                 this.far,
             ));
-        objects.forEach(function (obj) {
-            obj.draw(new Matrix4(cameraMatrix));
-        });
+    }
+}
+
+class CameraViewOrthographic extends CameraViewBase {
+    constructor(gl, left=-1, right=1, bottom=-1, top=1, near=0, far=100) {
+        super(gl);
+        this.left = left;
+        this.right = right;
+        this.top = top;
+        this.bottom = bottom;
+        this.near = near;
+        this.far = far;
+    }
+
+    get perspectiveTransform() {
+        return Matrix4.orthographic(
+            this.left,
+            this.right,
+            this.bottom,
+            this.top,
+            this.near,
+            this.far,
+        );
     }
 }

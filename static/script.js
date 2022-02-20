@@ -64,13 +64,11 @@ async function main() {
     }
 
     let cube = new Cube(gl);
-    cube.position.z = 10;
-    cube.rotation = Quat.rotateY(-Math.PI / 4).multiply(Quat.rotateX(Math.PI / 4))
-    console.log(cube.transform);
-    console.log((new Vector3()).transform(cube.transform));
+    cube.position.z = 5;
+    cube.rotation = Quat.rotateY(-Math.PI / 4).multiply(Quat.rotateX(Math.PI / 4));
     cube.shader = shader;
 
-    let camera = new CameraView(gl);
+    let camera = new CameraViewPerspective(gl);
     camera.draw([
         cube,
     ]);
