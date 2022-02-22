@@ -206,6 +206,58 @@ class WithTransform extends WithGl {
     }
 }
 
+class WithTransform2D extends WithGl {
+    #position;
+    #rotation;
+    #scale;
+
+    constructor(gl) {
+        super(gl);
+        this.#position = Vector2.zero();
+        this.#rotation = 0.0;
+        this.#scale = Vector2.one();
+    }
+
+    get position() {
+        return this.#position;
+    }
+
+    set position(v) {
+        if (v instanceof Vector2)
+            this.#position = v;
+    }
+
+    get rotation() {
+        return this.#rotation;
+    }
+
+    set rotation(v) {
+        const TAU = Math.PI * 2;
+        while (v > Math.PI)
+            v -= TAU;
+        while (v < -Math.PI)
+            v += TAU;
+        if (v instanceof Number)
+            this.#rotation = v;
+    }
+
+    get scale() {
+        return this.#scale;
+    }
+
+    set scale(v) {
+        if (v instanceof Vector2)
+            this.#scale = v;
+    }
+
+    get transform() {
+        return Matrix3.identity()
+            .scale(this.#scale.x, this.#scale.y)
+            .rotate(this.#rotation)
+            .translate(this.#position.x, this.#position.y);
+    }
+}
+
 class Object3D extends WithTransform {
     constructor(gl) {
         super(gl);
@@ -244,6 +296,43 @@ class Object3D extends WithTransform {
     }
 }
 
+class Object2D extends WithTransform2D {
+    constructor(gl) {
+        super(gl);
+        this.vertexBuffer = gl.createBuffer();
+        this.vertexSize = 8;
+        this.vertexOffset = 0;
+        this.positionOffset = 0;
+        this.vertexCount = 0;
+        this.drawType = gl.TRIANGLES;
+        this.shader = null;
+        this.zOrder = 0;
+    }
+
+    update(delta) {
+    }
+
+    draw(cameraMatrix, zscale, zoffset) {
+        const gl = this.gl;
+        this.shader.useProgram();
+        const transform = this.transform.multiply(cameraMatrix);
+        const size = this.vertexSize;
+        const offset = this.vertexOffset;
+        this.shader.setAttribBuffer(
+            "aVertexPosition",
+            this.vertexBuffer,
+            2,
+            gl.FLOAT,
+            false,
+            size,
+            this.positionOffset + offset,
+        );
+        this.shader.uniform.uTranformMatrix = transform.array;
+        this.shader.uniform.uZorder = (this.zOrder - zoffset) * zscale;
+        gl.drawArrays(this.drawType, 0, this.vertexCount);
+    }
+}
+
 class CameraViewBase extends WithTransform {
     constructor(gl) {
         super(gl);
@@ -265,9 +354,7 @@ class CameraViewBase extends WithTransform {
         const cameraMatrix = this.transform
             .scale(1, 1, -1)
             .multiply(this.perspectiveTransform);
-        objects.forEach(function (obj) {
-            obj.draw(new Matrix4(cameraMatrix));
-        });
+        objects.forEach((obj) => obj.draw(new Matrix4(cameraMatrix)));
     }
 }
 
@@ -316,5 +403,43 @@ class CameraViewOrthographic extends CameraViewBase {
             this.near,
             this.far,
         );
+    }
+}
+
+class CameraView2D extends WithTransform2D {
+    constructor(gl) {
+        super(gl);
+    }
+
+    draw(objects) {
+        const gl = this.gl;
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearDepth(1.0);
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        const cv = this.gl.canvas;
+        let aspect = 1;
+        if (cv !== null) {
+            aspect = cv.height / cv.width;
+        }
+        const cameraMatrix = this.transform.scale(aspect, 1);
+        const limits = objects.reduce((a, b) => {
+            let v = b.zOrder;
+            if ((a.min > v) || (a.min === undefined)) {
+                a.min = v;
+            }
+            if ((a.max < v) || (a.max === undefined)) {
+                a.max = v;
+            }
+            return a;
+        }, {min: undefined, max: undefined});
+        const zoffset = limits.min;
+        let zscale = 0.0;
+        if ((limits.max - limits.min) >= 1e-4)
+            zscale = 1.0 / (limits.min - limits.max);
+        objects.forEach((obj) => obj.draw(new Matrix3(cameraMatrix), zscale, zoffset));
     }
 }

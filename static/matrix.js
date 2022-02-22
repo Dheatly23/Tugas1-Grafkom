@@ -145,6 +145,25 @@ class Vector3 {
         return this;
     }
 
+    scale(factor) {
+        this.#data[0] *= other;
+        this.#data[1] *= other;
+        this.#data[2] *= other;
+        return this;
+    }
+
+    project(other) {
+        if (!(other instanceof Vector3)) {
+            throw new Error("Cannot project with non-vector");
+        }
+        const d = this.#data[0] * other.#data[0] + this.#data[1] * other.#data[1] + this.#data[2] * other.#data[2];
+        const f = d / other.lengthSquared;
+        this.#data[0] = other.#data[0] * f;
+        this.#data[1] = other.#data[1] * f;
+        this.#data[2] = other.#data[2] * f;
+        return this;
+    }
+
     dot(other) {
         if (!(other instanceof Vector3)) {
             throw new Error("Cannot dot product with non-vector");
@@ -167,7 +186,7 @@ class Vector3 {
 
     transform(other) {
         if (!(other instanceof Matrix4)) {
-            throw new Error("Cannot cross product with non-matrix");
+            throw new Error("Cannot transform with non-matrix");
         }
         const o = other.array;
         const x = this.#data[0] * o[0] + this.#data[1] * o[4] + this.#data[2] * o[8] + o[12];
@@ -478,7 +497,7 @@ class Quat {
 
     inverse() {
         let i = 1.0 / (this.r * this.r + this.x * this.x + this.y * this.y + this.z * this.z);
-        return new this(this.r * i, -this.x * i, -this.y * i, -this.z * i);
+        return new Quat(this.r * i, -this.x * i, -this.y * i, -this.z * i);
     }
 
     get norm() {
@@ -518,5 +537,282 @@ class Quat {
             2 * (bd - ac), 2 * (cd + ab), aa - bb - cc + dd, 0,
             0, 0, 0, 1,
         ]);
+    }
+}
+
+class Matrix3 {
+    #data;
+
+    constructor(data) {
+        if (data instanceof Matrix3) {
+            this.#data = new Float32Array(data.#data);
+        } else if (data !== undefined) {
+            this.#data = new Float32Array(9);
+            this.#data.set(data);
+        } else {
+            this.#data = new Float32Array(9);
+        }
+    }
+
+    getEntry(i, j) {
+        if ((i < 0) || (i > 2))
+            return undefined;
+        if ((j < 0) || (j > 2))
+            return undefined;
+        return this.#data[i + j * 3];
+    }
+
+    setEntry(i, j, v) {
+        if ((i < 0) || (i > 2))
+            return undefined;
+        if ((j < 0) || (j > 2))
+            return undefined;
+        this.#data[i + j * 3] = v;
+        return this;
+    }
+
+    get array() {
+        return this.#data.slice();
+    }
+
+    set array(v) {
+        if (v.length !== 9)
+            throw new Error("length mismatch");
+        this.#data.set(v);
+    }
+
+    static identity() {
+        return new this([
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+        ]);
+    }
+
+    multiply(other) {
+        if (!(other instanceof Matrix4)) {
+            throw new Error("Cannot multiply with non-matrix");
+        }
+        let a = this.#data;
+        let b = other.#data;
+        this.#data.set([
+            a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+            a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+            a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+            a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+            a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+            a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+            a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+            a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+            a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
+        ]);
+        return this;
+    }
+
+    transpose() {
+        let m = this.#data;
+        function swap(i, j) {
+            let t = m[i];
+            m[i] = m[j];
+            m[j] = t;
+        }
+        swap(1, 3);
+        swap(2, 6);
+        swap(5, 7);
+        return this;
+    }
+
+    translate(dx, dy) {
+        const ddx = dx * this.#data[2];
+        const ddy = dy * this.#data[6];
+        this.#data[0] += ddx;
+        this.#data[3] += ddx;
+        this.#data[6] += dx;
+        this.#data[1] += ddy;
+        this.#data[4] += ddy;
+        this.#data[7] += dy;
+        return this;
+    }
+
+    rotate(theta) {
+        const s = Math.sin(theta);
+        const c = Math.cos(theta);
+        const v00 = this.#data[0] * c + this.#data[1] * s;
+        const v01 = this.#data[3] * c + this.#data[4] * s;
+        const v10 = this.#data[0] * -s + this.#data[1] * c;
+        const v11 = this.#data[3] * -s + this.#data[4] * c;
+        this.#data[0] = v00;
+        this.#data[3] = v01;
+        this.#data[1] = v10;
+        this.#data[4] = v11;
+        return this;
+    }
+
+    scale(sx, sy) {
+        this.#data[0] *= sx;
+        this.#data[3] *= sx;
+        this.#data[6] *= sx;
+        this.#data[1] *= sy;
+        this.#data[4] *= sy;
+        this.#data[7] *= sy;
+        return this;
+    }
+}
+
+class Vector2 {
+    #data;
+
+    constructor() {
+        if (arguments.length === 2) {
+            this.#data = new Float32Array(arguments);
+        } else if (arguments.length === 1) {
+            let data = arguments[0];
+            if (data instanceof Vector2) {
+                this.#data = new Float32Array(data.#data);
+            } else if (data !== undefined) {
+                this.#data = new Float32Array(2);
+                this.#data.set(data);
+            } else {
+                this.#data = new Float32Array(2);
+            }
+        } else if (arguments.length === 0) {
+            this.#data = new Float32Array(2);
+        } else {
+            throw new Error("Unexpected argument length");
+        }
+    }
+
+    get [0]() {
+        return this.#data[0];
+    }
+
+    set [0](v) {
+        this.#data[0] = v;
+    }
+
+    get [1]() {
+        return this.#data[1];
+    }
+
+    set [1](v) {
+        this.#data[1] = v;
+    }
+
+    get x() {
+        return this.#data[0];
+    }
+
+    set x(v) {
+        this.#data[0] = v;
+    }
+
+    get y() {
+        return this.#data[1];
+    }
+
+    set y(v) {
+        this.#data[1] = v;
+    }
+
+    get lengthSquared() {
+        const x = this.x;
+        const y = this.y;
+        return x * x + y * y;
+    }
+
+    get length() {
+        return Math.sqrt(this.lengthSquared);
+    }
+
+    static zero() {
+        return new this();
+    }
+
+    static one() {
+        return new this(1, 1);
+    }
+
+    static x() {
+        return new this(1, 0);
+    }
+
+    static y() {
+        return new this(0, 1);
+    }
+
+    normalize() {
+        const l = 1.0 / this.length;
+        this.#data[0] *= l;
+        this.#data[1] *= l;
+        return this;
+    }
+
+    negative() {
+        this.#data[0] = -this.#data[0];
+        this.#data[1] = -this.#data[1];
+        return this;
+    }
+
+    add(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot add with non-vector");
+        }
+        this.#data[0] += other.#data[0];
+        this.#data[1] += other.#data[1];
+        return this;
+    }
+
+    sub(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot subtract with non-vector");
+        }
+        this.#data[0] -= other.#data[0];
+        this.#data[1] -= other.#data[1];
+        return this;
+    }
+
+    rsub(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot reverse subtract with non-vector");
+        }
+        this.#data[0] = other.#data[0] - this.#data[0];
+        this.#data[1] = other.#data[1] - this.#data[1];
+        return this;
+    }
+
+    scale(factor) {
+        this.#data[0] *= other;
+        this.#data[1] *= other;
+        return this;
+    }
+
+    project(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot project with non-vector");
+        }
+        const d = this.#data[0] * other.#data[0] + this.#data[1] * other.#data[1];
+        const f = d / other.lengthSquared;
+        this.#data[0] = other.#data[0] * f;
+        this.#data[1] = other.#data[1] * f;
+        return this;
+    }
+
+    dot(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot dot product with non-vector");
+        }
+        return this.#data[0] * other.#data[0] + this.#data[1] * other.#data[1];
+    }
+
+    transform(other) {
+        if (!(other instanceof Matrix3)) {
+            throw new Error("Cannot transform with non-matrix");
+        }
+        const o = other.array;
+        const x = this.#data[0] * o[0] + this.#data[1] * o[3] + o[6];
+        const y = this.#data[0] * o[1] + this.#data[1] * o[4] + o[7];
+        this.#data[0] = x;
+        this.#data[1] = y;
+        return this;
     }
 }
