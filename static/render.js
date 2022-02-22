@@ -428,14 +428,17 @@ class CameraView2D extends WithTransform2D {
         const cameraMatrix = this.transform.scale(aspect, 1);
         const limits = objects.reduce((a, b) => {
             let v = b.zOrder;
-            if ((a.min > v) || (a.min === undefined)) {
+            if (a === undefined) {
+                return {min: v, max: v};
+            }
+            if (a.min > v) {
                 a.min = v;
             }
-            if ((a.max < v) || (a.max === undefined)) {
+            if (a.max < v) {
                 a.max = v;
             }
             return a;
-        }, {min: undefined, max: undefined});
+        }, undefined);
         const zoffset = limits.min;
         let zscale = 0.0;
         if ((limits.max - limits.min) >= 1e-4)
