@@ -590,7 +590,7 @@ class Matrix3 {
     }
 
     multiply(other) {
-        if (!(other instanceof Matrix4)) {
+        if (!(other instanceof Matrix3)) {
             throw new Error("Cannot multiply with non-matrix");
         }
         let a = this.#data;
