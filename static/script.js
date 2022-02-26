@@ -14,67 +14,45 @@ async function main() {
 
     let shaderRegistry = new ShaderRegistry(gl);
 
-    let shader = await shaderRegistry.loadShaderProgram("vertex.vert", "fragment.frag");
+    let shader = await shaderRegistry.loadShaderProgram("vertex_2d.vert", "fragment.frag");
 
-    class Cube extends Object3D {
-        constructor(gl) {
+    class Polygon extends Object2D {
+        constructor(gl, vertices=undefined) {
             super(gl);
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-            gl.bufferData(
-                gl.ARRAY_BUFFER,
-                new Float32Array([
-                    -1.0, -1.0, -1.0,
-                    -1.0, -1.0, 1.0,
-                    -1.0, 1.0, -1.0,
-                    -1.0, 1.0, 1.0,
-                    1.0, -1.0, -1.0,
-                    1.0, -1.0, 1.0,
-                    1.0, 1.0, -1.0,
-                    1.0, 1.0, 1.0,
-                ]),
-                gl.STATIC_DRAW,
-            );
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-            gl.bufferData(
-                gl.ELEMENT_ARRAY_BUFFER,
-                new Uint16Array([
-                    // Front
-                    0, 4, 2,
-                    2, 4, 6,
-                    // Back
-                    1, 3, 5,
-                    5, 3, 7,
-                    // Up
-                    2, 6, 3,
-                    3, 6, 7,
-                    // Down
-                    0, 1, 4,
-                    4, 1, 5,
-                    // Left
-                    0, 2, 1,
-                    1, 2, 3,
-                    // Right
-                    4, 5, 6,
-                    6, 5, 7,
-                ]),
-                gl.STATIC_DRAW,
-            );
-            this.indexCount = 6 * 2 * 3;
+            this.drawType = gl.LINE_LOOP;
+            if (vertices === undefined) {
+                vertices = [];
+            }
+            this.vertices = vertices;
         }
 
-        draw(cameraMatrix) {
+        draw(cameraMatrix, zscale, zoffset) {
+            this.vertexCount = this.vertices.length;
+            let data = new Float32Array(this.vertices.length * 2);
+            this.vertices.forEach((e, ix) => {
+                let i = ix * 2;
+                data[i] = e.x;
+                data[i + 1] = e.y;
+            });
+
+            const gl = this.gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
             this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
-            super.draw(cameraMatrix);
+            super.draw(cameraMatrix, zscale, zoffset);
         }
     }
 
-    let cube = new Cube(gl);
-    cube.position.z = 5;
-    cube.rotation = Quat.rotateY(-Math.PI / 4).multiply(Quat.rotateX(Math.PI / 4));
-    cube.shader = shader;
+    let square = new Polygon(gl, [
+        new Vector2(0, 0),
+        new Vector2(0, 1),
+        new Vector2(1, 1),
+        new Vector2(1, 0),
+    ]);
+    square.shader = shader;
 
-    let objects = [cube];
-    let camera = new CameraViewPerspective(gl);
+    let objects = [square];
+    let camera = new CameraView2D(gl);
 
     let keystate = {
         "up": false,

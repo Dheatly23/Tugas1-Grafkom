@@ -272,6 +272,11 @@ class Object3D extends WithTransform {
         this.shader = null;
     }
 
+    destroy() {
+        this.gl.deleteBuffer(this.vbo);
+        this.gl.deleteBuffer(this.indexBuffer);
+    }
+
     update(delta) {
     }
 
@@ -307,6 +312,10 @@ class Object2D extends WithTransform2D {
         this.drawType = gl.TRIANGLES;
         this.shader = null;
         this.zOrder = 0;
+    }
+
+    destroy() {
+        this.gl.deleteBuffer(this.vertexBuffer);
     }
 
     update(delta) {
@@ -414,19 +423,20 @@ class CameraView2D extends WithTransform2D {
 
     draw(objects) {
         const gl = this.gl;
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clearDepth(1.0);
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // Mix color
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         const cv = this.gl.canvas;
         let aspect = 1;
         if (cv !== null) {
             aspect = cv.height / cv.width;
         }
-        const cameraMatrix = this.transform.scale(aspect, 1);
+        const cameraMatrix = this.transform.scale(-aspect, 1);
         const limits = objects.reduce((a, b) => {
             let v = b.zOrder;
             if (a === undefined) {
