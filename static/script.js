@@ -61,6 +61,11 @@ async function main() {
             );
             this.indexCount = 6 * 2 * 3;
         }
+
+        draw(cameraMatrix) {
+            this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
+            super.draw(cameraMatrix);
+        }
     }
 
     let cube = new Cube(gl);
@@ -68,10 +73,70 @@ async function main() {
     cube.rotation = Quat.rotateY(-Math.PI / 4).multiply(Quat.rotateX(Math.PI / 4));
     cube.shader = shader;
 
+    let objects = [cube];
     let camera = new CameraViewPerspective(gl);
-    camera.draw([
-        cube,
-    ]);
+
+    let keystate = {
+        "up": false,
+        "down": false,
+        "left": false,
+        "right": false,
+    }
+
+    const keybind = {
+        "ArrowUp": "up",
+        "ArrowDown": "down",
+        "ArrowLeft": "left",
+        "ArrowRight": "right",
+        "KeyW": "up",
+        "KeyS": "down",
+        "KeyA": "left",
+        "KeyD": "right",
+    };
+
+    document.addEventListener("keydown", (ev) => {
+        const state = keybind[ev.code];
+        if (state !== undefined) {
+            keystate[state] = true;
+        }
+    });
+    document.addEventListener("keyup", (ev) => {
+        const state = keybind[ev.code];
+        if (state !== undefined) {
+            keystate[state] = false;
+        }
+    });
+
+    function processKeystate(delta) {
+        const moveRate = 1.0;
+
+        if (keystate.up) {
+            camera.position.y -= moveRate * delta;
+        }
+        if (keystate.down) {
+            camera.position.y += moveRate * delta;
+        }
+        if (keystate.left) {
+            camera.position.x -= moveRate * delta;
+        }
+        if (keystate.right) {
+            camera.position.x += moveRate * delta;
+        }
+    }
+
+    let prev = 0;
+
+    function process(now) {
+        now *= 0.001;
+        const delta = now - prev;
+        prev = now;
+
+        processKeystate(delta);
+        camera.draw(objects);
+        window.requestAnimationFrame(process);
+    }
+
+    window.requestAnimationFrame(process);
 }
 
 window.onload = main;

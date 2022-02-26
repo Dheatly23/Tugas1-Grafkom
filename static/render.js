@@ -344,15 +344,16 @@ class CameraViewBase extends WithTransform {
 
     draw(objects) {
         const gl = this.gl;
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clearDepth(1.0);
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // Mix color
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         const cameraMatrix = this.transform
-            .scale(1, 1, -1)
+            .scale(-1, 1, -1)
             .multiply(this.perspectiveTransform);
         objects.forEach((obj) => obj.draw(new Matrix4(cameraMatrix)));
     }
