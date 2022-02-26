@@ -155,6 +155,16 @@ class Vector3 {
         return this;
     }
 
+    divide(other) {
+        if (!(other instanceof Vector3)) {
+            throw new Error("Cannot divide with non-vector");
+        }
+        this.#data[0] /= other.#data[0];
+        this.#data[1] /= other.#data[1];
+        this.#data[2] /= other.#data[2];
+        return this;
+    }
+
     scale(factor) {
         this.#data[0] *= factor;
         this.#data[1] *= factor;
@@ -799,9 +809,28 @@ class Vector2 {
         return this;
     }
 
+    divide(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot divide with non-vector");
+        }
+        this.#data[0] /= other.#data[0];
+        this.#data[1] /= other.#data[1];
+        return this;
+    }
+
     scale(factor) {
         this.#data[0] *= factor;
         this.#data[1] *= factor;
+        return this;
+    }
+
+    rotate(theta) {
+        const s = Math.sin(theta);
+        const c = Math.cos(theta);
+        const x = this.#data[0] * c + this.#data[1] * s;
+        const y = this.#data[0] * -s + this.#data[1] * c;
+        this.#data[0] = x;
+        this.#data[1] = y;
         return this;
     }
 

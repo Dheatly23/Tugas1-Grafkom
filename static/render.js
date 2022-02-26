@@ -237,8 +237,7 @@ class WithTransform2D extends WithGl {
             v -= TAU;
         while (v < -Math.PI)
             v += TAU;
-        if (v instanceof Number)
-            this.#rotation = v;
+        this.#rotation = v;
     }
 
     get scale() {

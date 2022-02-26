@@ -16,13 +16,6 @@ async function main() {
 
     let shader = await shaderRegistry.loadShaderProgram("vertex_2d.vert", "fragment.frag");
 
-    function getPos(ev) {
-        const cv = ev.target;
-        return (new Vector2(ev.offsetX, ev.offsetY))
-            .multiply(new Vector2(-2 / cv.height, -2 / cv.height))
-            .add(new Vector2(cv.width / cv.height, 1));
-    }
-
     class Polygon extends Object2D {
         constructor(gl, vertices=undefined) {
             super(gl);
@@ -87,6 +80,16 @@ async function main() {
 
     let objects = [square];
     let camera = new CameraView2D(gl);
+
+    function getPos(ev) {
+        const cv = ev.target;
+        return (new Vector2(ev.offsetX, ev.offsetY))
+            .multiply(new Vector2(-2 / cv.height, -2 / cv.height))
+            .add(new Vector2(cv.width / cv.height, 1))
+            .sub(camera.position)
+            .rotate(-camera.rotation)
+            .divide(camera.scale);
+    }
 
     canvas.addEventListener("mousemove", (ev) => {
         const last = objects[objects.length - 1];
