@@ -55,7 +55,6 @@ async function main() {
                     index[ix + i] = i;
                 }
                 index[index.length - 1] = 0;
-                console.log(index);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
                 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index, gl.STATIC_DRAW);
             }
@@ -71,6 +70,78 @@ async function main() {
             this.drawType = gl.LINE_LOOP;
             this.indexOffset = (this.indexCount - 2) * 2;
             this.indexCount = l + 1;
+            super.draw(cameraMatrix, zscale, zoffset);
+        }
+
+        drawMove(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            const pos = getPos(ev);
+            this.vertices[this.vertices.length - 1] = pos;
+        }
+        drawClick(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            this.vertices.push(this.vertices[this.vertices.length - 1]);
+        }
+        drawBegin(ev) {
+            if (this.drawing !== null) {
+                return;
+            }
+            this.drawing = true;
+            const pos = getPos(ev);
+            this.vertices.push(pos);
+            this.vertices.push(pos);
+        }
+        drawEnd(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            this.drawing = false;
+            this.vertices.pop();
+        }
+    }
+
+    class LineStrip extends Object2D {
+        constructor(gl, vertices=undefined) {
+            super(gl);
+            this.drawType = gl.LINE_STRIP;
+            if (vertices === undefined) {
+                vertices = [];
+            }
+            this.vertices = vertices;
+            this.vertexCount = 0;
+            this.drawing = null;
+        }
+
+        draw(cameraMatrix, zscale, zoffset) {
+            const l = this.vertices.length;
+            if (l == 0) {
+                return;
+            }
+            let data = new Float32Array(l * 2);
+            this.vertices.forEach((e, ix) => {
+                let i = ix * 2;
+                data[i] = e.x;
+                data[i + 1] = e.y;
+            });
+
+            const gl = this.gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+            if (this.vertexCount != l) {
+                let index = new Uint16Array(l);
+                for (let i = 0; i < l; i++) {
+                    index[i] = i;
+                }
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index, gl.STATIC_DRAW);
+            }
+            this.vertexCount = l;
+            this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
+            this.indexCount = l;
             super.draw(cameraMatrix, zscale, zoffset);
         }
 
