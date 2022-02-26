@@ -105,11 +105,83 @@ async function main() {
         }
     }
 
-    let square = new Polygon(gl, [
-    ]);
-    square.shader = shader;
+    class Rectangle extends Object2D {
+        constructor(gl, vertices=undefined) {
+            super(gl);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.bufferData(
+                gl.ELEMENT_ARRAY_BUFFER,
+                new Uint16Array([
+                    0, 1, 2, 3,
+                ]),
+                gl.STATIC_DRAW,
+            );
+            this.indexCount = 4;
+            this.width = 0;
+            this.height = 0;
+            this.drawing = null;
+        }
 
-    let objects = [square];
+        draw(cameraMatrix, zscale, zoffset) {
+            const gl = this.gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+            gl.bufferData(
+                gl.ARRAY_BUFFER,
+                new Float32Array([
+                    0, 0,
+                    0, this.height,
+                    this.width, this.height,
+                    this.width, 0,
+                ]),
+                gl.DYNAMIC_DRAW,
+            );
+            this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
+            this.drawType = gl.TRIANGLE_FAN;
+            gl.disable(gl.CULL_FACE);
+            super.draw(cameraMatrix, zscale, zoffset);
+            gl.enable(gl.CULL_FACE);
+            this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
+            this.drawType = gl.LINE_LOOP;
+            super.draw(cameraMatrix, zscale, zoffset);
+        }
+
+        drawMove(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            const dp = getPos(ev).sub(this.position);
+            this.width = dp.x;
+            this.height = dp.y;
+        }
+        drawClick(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            this.drawEnd(ev);
+        }
+        drawBegin(ev) {
+            if (this.drawing !== null) {
+                return;
+            }
+            this.drawing = true;
+            this.position = getPos(ev);
+        }
+        drawEnd(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            this.drawing = false;
+        }
+    }
+
+    let poly = new Polygon(gl);
+    poly.shader = shader;
+    let rect = new Rectangle(gl);
+    rect.width = 1;
+    rect.height = 0.5;
+    rect.shader = shader;
+
+    let objects = [rect, poly];
     let camera = new CameraView2D(gl);
 
     function getPos(ev) {
