@@ -145,10 +145,20 @@ class Vector3 {
         return this;
     }
 
+    multiply(other) {
+        if (!(other instanceof Vector3)) {
+            throw new Error("Cannot multiply with non-vector");
+        }
+        this.#data[0] *= other.#data[0];
+        this.#data[1] *= other.#data[1];
+        this.#data[2] *= other.#data[2];
+        return this;
+    }
+
     scale(factor) {
-        this.#data[0] *= other;
-        this.#data[1] *= other;
-        this.#data[2] *= other;
+        this.#data[0] *= factor;
+        this.#data[1] *= factor;
+        this.#data[2] *= factor;
         return this;
     }
 
@@ -780,9 +790,18 @@ class Vector2 {
         return this;
     }
 
+    multiply(other) {
+        if (!(other instanceof Vector2)) {
+            throw new Error("Cannot multiply with non-vector");
+        }
+        this.#data[0] *= other.#data[0];
+        this.#data[1] *= other.#data[1];
+        return this;
+    }
+
     scale(factor) {
-        this.#data[0] *= other;
-        this.#data[1] *= other;
+        this.#data[0] *= factor;
+        this.#data[1] *= factor;
         return this;
     }
 

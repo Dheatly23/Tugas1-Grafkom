@@ -16,6 +16,13 @@ async function main() {
 
     let shader = await shaderRegistry.loadShaderProgram("vertex_2d.vert", "fragment.frag");
 
+    function getPos(ev) {
+        const cv = ev.target;
+        return (new Vector2(ev.offsetX, ev.offsetY))
+            .multiply(new Vector2(-2 / cv.height, -2 / cv.height))
+            .add(new Vector2(cv.width / cv.height, 1));
+    }
+
     class Polygon extends Object2D {
         constructor(gl, vertices=undefined) {
             super(gl);
@@ -24,6 +31,7 @@ async function main() {
                 vertices = [];
             }
             this.vertices = vertices;
+            this.drawing = null;
         }
 
         draw(cameraMatrix, zscale, zoffset) {
@@ -41,24 +49,70 @@ async function main() {
             this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
             super.draw(cameraMatrix, zscale, zoffset);
         }
+
+        drawMove(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            const pos = getPos(ev);
+            this.vertices[this.vertices.length - 1] = pos;
+        }
+        drawClick(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            this.vertices.push(this.vertices[this.vertices.length - 1]);
+        }
+        drawBegin(ev) {
+            if (this.drawing !== null) {
+                return;
+            }
+            this.drawing = true;
+            const pos = getPos(ev);
+            this.vertices.push(pos);
+            this.vertices.push(pos);
+        }
+        drawEnd(ev) {
+            if (!this.drawing) {
+                return;
+            }
+            this.drawing = false;
+            this.vertices.pop();
+        }
     }
 
     let square = new Polygon(gl, [
-        new Vector2(0, 0),
-        new Vector2(0, 1),
-        new Vector2(1, 1),
-        new Vector2(1, 0),
     ]);
     square.shader = shader;
 
     let objects = [square];
     let camera = new CameraView2D(gl);
 
+    canvas.addEventListener("mousemove", (ev) => {
+        const last = objects[objects.length - 1];
+        if (last === undefined) {
+            return;
+        }
+        last.drawMove(ev);
+    });
+    canvas.addEventListener("click", (ev) => {
+        const last = objects[objects.length - 1];
+        if (last === undefined) {
+            return;
+        }
+        if (last.drawing === null) {
+            last.drawBegin(ev);
+        } else {
+            last.drawClick(ev);
+        }
+    });
+
     let keystate = {
         "up": false,
         "down": false,
         "left": false,
         "right": false,
+        "end": false,
     }
 
     const keybind = {
@@ -70,6 +124,7 @@ async function main() {
         "KeyS": "down",
         "KeyA": "left",
         "KeyD": "right",
+        "Escape": "end",
     };
 
     document.addEventListener("keydown", (ev) => {
@@ -99,6 +154,13 @@ async function main() {
         }
         if (keystate.right) {
             camera.position.x += moveRate * delta;
+        }
+
+        if (keystate.end) {
+            const last = objects[objects.length - 1];
+            if (last !== undefined) {
+                last.drawEnd(null);
+            }
         }
     }
 
