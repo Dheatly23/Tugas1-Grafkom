@@ -19,17 +19,20 @@ async function main() {
     class Polygon extends Object2D {
         constructor(gl, vertices=undefined) {
             super(gl);
-            this.drawType = gl.LINE_LOOP;
             if (vertices === undefined) {
                 vertices = [];
             }
             this.vertices = vertices;
+            this.vertexCount = 0;
             this.drawing = null;
         }
 
         draw(cameraMatrix, zscale, zoffset) {
-            this.vertexCount = this.vertices.length;
-            let data = new Float32Array(this.vertices.length * 2);
+            const l = this.vertices.length;
+            if (l == 0) {
+                return;
+            }
+            let data = new Float32Array(l * 2);
             this.vertices.forEach((e, ix) => {
                 let i = ix * 2;
                 data[i] = e.x;
@@ -37,9 +40,37 @@ async function main() {
             });
 
             const gl = this.gl;
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
             gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+            if (this.vertexCount != l) {
+                let index = new Uint16Array(l * 4 - 3);
+                for (let i = 0; i < (l - 1); i++) {
+                    const ix = i * 3;
+                    index[ix] = i;
+                    index[ix + 1] = i + 1;
+                    index[ix + 2] = i + 2;
+                }
+                const ix = l * 3 - 4;
+                for (let i = 0; i < l; i++) {
+                    index[ix + i] = i;
+                }
+                index[index.length - 1] = 0;
+                console.log(index);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index, gl.STATIC_DRAW);
+            }
+            this.vertexCount = l;
             this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
+            this.drawType = gl.TRIANGLES;
+            this.indexCount = l * 3 - 3;
+            this.indexOffset = 0;
+            gl.disable(gl.CULL_FACE);
+            super.draw(cameraMatrix, zscale, zoffset);
+            gl.enable(gl.CULL_FACE);
+            this.shader.setAttrib("aVertexColor", [0.0, 0.0, 0.0, 1.0]);
+            this.drawType = gl.LINE_LOOP;
+            this.indexOffset = (this.indexCount - 2) * 2;
+            this.indexCount = l + 1;
             super.draw(cameraMatrix, zscale, zoffset);
         }
 

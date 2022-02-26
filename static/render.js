@@ -303,18 +303,21 @@ class Object3D extends WithTransform {
 class Object2D extends WithTransform2D {
     constructor(gl) {
         super(gl);
-        this.vertexBuffer = gl.createBuffer();
+        this.vbo = gl.createBuffer();
         this.vertexSize = 8;
         this.vertexOffset = 0;
         this.positionOffset = 0;
-        this.vertexCount = 0;
+        this.indexBuffer = gl.createBuffer();
+        this.indexCount = 0;
+        this.indexOffset = 0;
         this.drawType = gl.TRIANGLES;
         this.shader = null;
         this.zOrder = 0;
     }
 
     destroy() {
-        this.gl.deleteBuffer(this.vertexBuffer);
+        this.gl.deleteBuffer(this.vbo);
+        this.gl.deleteBuffer(this.indexBuffer);
     }
 
     update(delta) {
@@ -328,7 +331,7 @@ class Object2D extends WithTransform2D {
         const offset = this.vertexOffset;
         this.shader.setAttribBuffer(
             "aVertexPosition",
-            this.vertexBuffer,
+            this.vbo,
             2,
             gl.FLOAT,
             false,
@@ -337,7 +340,8 @@ class Object2D extends WithTransform2D {
         );
         this.shader.uniform.uTranformMatrix = transform.array;
         this.shader.uniform.uZorder = (this.zOrder - zoffset) * zscale;
-        gl.drawArrays(this.drawType, 0, this.vertexCount);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        gl.drawElements(this.drawType, this.indexCount, gl.UNSIGNED_SHORT, this.indexOffset);
     }
 }
 
