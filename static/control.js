@@ -176,6 +176,89 @@ function initControl(gl, shader) {
         }
     });
 
+    const txtSavedata = document.getElementById("txtSavedata");
+    const btnLoad = document.getElementById("btnLoad");
+    const btnSave = document.getElementById("btnSave");
+
+    btnSave.addEventListener("click", (ev) => {
+        txtSavedata.value = btoa(JSON.stringify(objects.map((e) => {
+            if (e instanceof LineStrip) {
+                return {
+                    "type": "line",
+                    "position": [e.position.x, e.position.y],
+                    "color": e.color,
+                    "edgeColor": e.edgeColor,
+                    "coords": e.vertices.map((v) => [v.x, v.y]),
+                };
+            } else if (e instanceof Polygon) {
+                return {
+                    "type": "polygon",
+                    "position": [e.position.x, e.position.y],
+                    "color": e.color,
+                    "edgeColor": e.edgeColor,
+                    "coords": e.vertices.map((v) => [v.x, v.y]),
+                };
+            } else if (e instanceof Rectangle) {
+                return {
+                    "type": "rectangle",
+                    "position": [e.position.x, e.position.y],
+                    "color": e.color,
+                    "edgeColor": e.edgeColor,
+                    "width": e.width,
+                    "height": e.height,
+                };
+            } else {
+                throw new Error(e);
+            }
+        })));
+    });
+    btnLoad.addEventListener("click", (ev) => {
+        let arr = JSON.parse(atob(txtSavedata.value)).map((e) => {
+            if (e.type === "line") {
+                let obj = new LineStrip(gl);
+                obj.position.x = e.position[0];
+                obj.position.y = e.position[1];
+                obj.color = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.edgeColor = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.shader = shader;
+                obj.drawing = false;
+                obj.vertices = e.coords.map((v) => new Vector2(v[0], v[1]));
+                return obj;
+            } else if (e.type === "polygon") {
+                let obj = new Polygon(gl);
+                obj.position.x = e.position[0];
+                obj.position.y = e.position[1];
+                obj.color = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.edgeColor = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.shader = shader;
+                obj.drawing = false;
+                obj.vertices = e.coords.map((v) => new Vector2(v[0], v[1]));
+                return obj;
+            } else if (e.type === "rectangle") {
+                let obj = new Rectangle(gl);
+                obj.position.x = e.position[0];
+                obj.position.y = e.position[1];
+                obj.color = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.edgeColor = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.shader = shader;
+                obj.drawing = false;
+                obj.width = e.width;
+                obj.height = e.height;
+                return obj;
+            } else {
+                throw new Error(e);
+            }
+        });
+        while (objects.length > 0) {
+            objects.pop().destroy();
+        }
+        arr.forEach((e, ix) => {
+            objects[ix] = e;
+        });
+        selIndex = 0;
+        updateInputData();
+    });
+
     let keystate = {
         "up": false,
         "down": false,
