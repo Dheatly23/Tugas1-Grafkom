@@ -1,8 +1,8 @@
 function colorToHex(color) {
     return "#"
-        + color[0].toString(16).padStart(2, "0")
-        + color[1].toString(16).padStart(2, "0")
-        + color[2].toString(16).padStart(2, "0");
+        + (color[0] * 255).toString(16).padStart(2, "0")
+        + (color[1] * 255).toString(16).padStart(2, "0")
+        + (color[2] * 255).toString(16).padStart(2, "0");
 }
 
 function hexToColor(hex) {
@@ -60,7 +60,6 @@ function initControl(gl, shader) {
             lstType.selectedIndex = 3;
         inXPos.value = obj.position.x;
         inYPos.value = obj.position.y;
-        inColor.value = colorToHex(obj.color);
         inEdgeColor.value = colorToHex(obj.edgeColor);
         if (obj.drawing !== false) {
             btnRedraw.innerText = "Drawing";
@@ -219,7 +218,7 @@ function initControl(gl, shader) {
                 obj.position.x = e.position[0];
                 obj.position.y = e.position[1];
                 obj.color = [e.color[0], e.color[1], e.color[2], e.color[3]];
-                obj.edgeColor = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.edgeColor = [e.edgeColor[0], e.edgeColor[1], e.edgeColor[2], e.edgeColor[3]];
                 obj.shader = shader;
                 obj.drawing = false;
                 obj.vertices = e.coords.map((v) => new Vector2(v[0], v[1]));
@@ -229,7 +228,7 @@ function initControl(gl, shader) {
                 obj.position.x = e.position[0];
                 obj.position.y = e.position[1];
                 obj.color = [e.color[0], e.color[1], e.color[2], e.color[3]];
-                obj.edgeColor = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.edgeColor = [e.edgeColor[0], e.edgeColor[1], e.edgeColor[2], e.edgeColor[3]];
                 obj.shader = shader;
                 obj.drawing = false;
                 obj.vertices = e.coords.map((v) => new Vector2(v[0], v[1]));
@@ -239,7 +238,7 @@ function initControl(gl, shader) {
                 obj.position.x = e.position[0];
                 obj.position.y = e.position[1];
                 obj.color = [e.color[0], e.color[1], e.color[2], e.color[3]];
-                obj.edgeColor = [e.color[0], e.color[1], e.color[2], e.color[3]];
+                obj.edgeColor = [e.edgeColor[0], e.edgeColor[1], e.edgeColor[2], e.edgeColor[3]];
                 obj.shader = shader;
                 obj.drawing = false;
                 obj.width = e.width;
