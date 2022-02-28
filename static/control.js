@@ -309,7 +309,7 @@ function initControl(gl, shader) {
         }
 
         if (keystate.end) {
-            const last = objects[selIndex / 255];
+            const last = objects[selIndex];
             if (last !== undefined) {
                 last.drawEnd(null);
                 updateInputData();
