@@ -1,9 +1,34 @@
 <!DOCTYPE html>
 <head>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
     <canvas id="glCanvas" width="640" height="480"></canvas>
+    <div class="control">
+        <div class="upbar">
+            <button id="btnPrev"> &lt </button>
+            <button id="btnAdd"> + </button>
+            <button id="btnSub"> - </button>
+            <button id="btnNext"> &gt </button>
+        </div>
+        <div class="proplist" id="proplist">
+            <label>Type : </label>
+            <select id="lstType">
+                <option value="">--Please choose an option--</option>
+                <option value="line">Line</option>
+                <option value="rect">Rectangle</option>
+                <option value="poly">Polygon</option>
+            </select>
+            <label>X : </label><input type="number" id="inXPos" />
+            <label>Y : </label><input type="number" id="inYPos" />
+            <label>Color : </label><input type="color" id="inColor" />
+            <label>Edge Color : </label><input type="color" id="inEdgeColor" />
+            <button id="btnRedraw">Redraw</button>
+        </div>
+    </div>
     <script src="matrix.js" defer></script>
     <script src="render.js" defer></script>
+    <script src="drawable.js" defer></script>
+    <script src="control.js" defer></script>
     <script src="script.js" defer></script>
 </body>

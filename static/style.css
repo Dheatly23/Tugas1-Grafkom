@@ -1,0 +1,24 @@
+.control {
+    border-width: 1;
+    border-color: #000000;
+    border-radius: 5;
+}
+
+.control .upbar {
+    display: flex;
+}
+
+.control .upbar > * {
+    flex: 1 1 100px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.control .proplist {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.control .proplist > button {
+    grid-column: span 2;
+}

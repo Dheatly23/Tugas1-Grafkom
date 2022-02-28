@@ -453,6 +453,9 @@ class CameraView2D extends WithTransform2D {
             }
             return a;
         }, undefined);
+        if (limits === undefined) {
+            return;
+        }
         const zoffset = limits.min;
         let zscale = 0.0;
         if ((limits.max - limits.min) >= 1e-4)
